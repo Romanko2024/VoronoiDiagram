@@ -25,5 +25,40 @@ namespace VoronoiDiagram
             pictureBox.Image = canvas;
             comboBoxMetric.SelectedIndex = 0;
         }
+        private void RenderVoronoi()
+        {
+            if (vertices.Count == 0)
+            {
+                using (var g = Graphics.FromImage(canvas))
+                    g.Clear(Color.White);
+                pictureBox.Refresh();
+                return;
+            }
+
+            var timer = Stopwatch.StartNew();
+            var cpuStart = Process.GetCurrentProcess().TotalProcessorTime;
+            var memStart = GC.GetTotalMemory(false);
+
+            locusSizes.Clear();
+            var colors = AssignColors();
+
+            if (useParallel)
+            {
+                int parts = Environment.ProcessorCount;
+                var partitions = PartitionCanvas(parts);
+
+                Parallel.ForEach(partitions, rect =>
+                {
+                    ProcessRegion(rect, colors);
+                });
+            }
+
+            timer.Stop();
+            var cpuTime = (Process.GetCurrentProcess().TotalProcessorTime - cpuStart).TotalMilliseconds;
+            var memUsed = (GC.GetTotalMemory(false) - memStart) / 1024.0;
+
+            labelStats.Text = $"׳אס: {timer.ElapsedMilliseconds} לס | CPU: {cpuTime:F2} לס | ֿאל'ÿעü: {memUsed:F2} Êֱ";
+            pictureBox.Refresh();
+        }
     }
 }
