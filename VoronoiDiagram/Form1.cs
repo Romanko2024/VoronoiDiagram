@@ -32,19 +32,23 @@ namespace VoronoiDiagram
             ["Манхетенська"] = (p1, p2) => Math.Abs(p1.X - p2.X) + Math.Abs(p1.Y - p2.Y),
             ["Чебишева"] = (p1, p2) => Math.Max(Math.Abs(p1.X - p2.X), Math.Abs(p1.Y - p2.Y))
         };
+
+        // Виправлено: конструктор має ім'я Form1 (назва класу)
         public Form1()
         {
             InitializeComponent();
             InitializeCustomComponents();
         }
+
         private Dictionary<PointF, Color> AssignColors()
         {
             var rnd = new Random();
             return vertices.ToDictionary(
                 v => v,
-                v => Color.FromArgb(rnd.Next(200, 256), rnd.Next(200, 256), rnd.Next(200, 256)) // Світлі кольори
+                v => Color.FromArgb(rnd.Next(200, 256), rnd.Next(200, 256), rnd.Next(200, 256))
             );
         }
+
         private void RenderVoronoi()
         {
             if (vertices.Count == 0)
@@ -139,6 +143,7 @@ namespace VoronoiDiagram
 
             return dist <= maxDist;
         }
+
         private List<Rectangle> PartitionCanvas(int parts)
         {
             int cols = (int)Math.Sqrt(parts);
@@ -161,6 +166,7 @@ namespace VoronoiDiagram
             }
             return partitions;
         }
+
         private PointF? FindClosestVertex(PointF point, Rectangle region, double maxDist)
         {
             PointF? closest = null;
@@ -268,10 +274,7 @@ namespace VoronoiDiagram
                 Dock = DockStyle.Top,
                 Height = 40
             };
-            controlPanel.Controls.AddRange(new Control[] {
-                comboBoxMetric, numericUpDownPoints, buttonGenerate, buttonClear,
-                numericUpDownRemove, buttonRemove, radioButtonSingle, radioButtonParallel
-            });
+
             radioButtonSingle = new RadioButton
             {
                 Text = "Один потік",
@@ -279,6 +282,7 @@ namespace VoronoiDiagram
                 Location = new Point(640, 11),
                 AutoSize = true
             };
+            radioButtonSingle.CheckedChanged += RadioButtonParallel_CheckedChanged;
 
             radioButtonParallel = new RadioButton
             {
@@ -286,16 +290,22 @@ namespace VoronoiDiagram
                 Location = new Point(720, 11),
                 AutoSize = true
             };
+            radioButtonParallel.CheckedChanged += RadioButtonParallel_CheckedChanged;
 
+            controlPanel.Controls.AddRange(new Control[] {
+                comboBoxMetric, numericUpDownPoints, buttonGenerate, buttonClear,
+                numericUpDownRemove, buttonRemove, radioButtonSingle, radioButtonParallel
+            });
             //додавання елементів
             this.Controls.Add(pictureBox);
             this.Controls.Add(controlPanel);
             this.Controls.Add(labelStats);
 
-            //ыныц полотна
+            //ініц полотна
             canvas = new Bitmap(pictureBox.Width, pictureBox.Height);
             pictureBox.Image = canvas;
         }
+
         private void PictureBox_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
@@ -315,7 +325,8 @@ namespace VoronoiDiagram
         {
             var rnd = new Random();
             vertices.Clear();
-            for (int i = 0; i < numericUpDownPoints.Value; i++)
+            int count = (int)numericUpDownPoints.Value;
+            for (int i = 0; i < count; i++)
             {
                 vertices.Add(new PointF(
                     rnd.Next(pictureBox.Width),
@@ -333,6 +344,7 @@ namespace VoronoiDiagram
             pictureBox.Refresh();
             labelStats.Text = "Статистика: ";
         }
+
         private void ComboBoxMetric_SelectedIndexChanged(object sender, EventArgs e)
         {
             currentMetric = comboBoxMetric.SelectedItem.ToString();
@@ -359,6 +371,5 @@ namespace VoronoiDiagram
             vertices.RemoveAll(toRemove.Contains);
             RenderVoronoi();
         }
-
     }
 }
