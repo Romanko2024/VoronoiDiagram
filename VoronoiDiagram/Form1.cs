@@ -10,8 +10,22 @@ namespace VoronoiDiagram
 {
     public partial class Form1 : Form
     {
+        private PictureBox pictureBox;
+        private ComboBox comboBoxMetric;
+        private NumericUpDown numericUpDownPoints;
+        private NumericUpDown numericUpDownRemove;
+        private Button buttonGenerate;
+        private Button buttonClear;
+        private Button buttonRemove;
+        private RadioButton radioButtonSingle;
+        private RadioButton radioButtonParallel;
+        private Label labelStats;
+
+        private List<PointF> vertices = new List<PointF>();
         private Bitmap canvas;
         private string currentMetric = "Евклідова";
+        private bool useParallel = false;
+        private Dictionary<PointF, int> locusSizes = new Dictionary<PointF, int>();
         private readonly Dictionary<string, Func<PointF, PointF, double>> metrics = new Dictionary<string, Func<PointF, PointF, double>>
         {
             ["Евклідова"] = (p1, p2) => Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2)),
@@ -150,6 +164,20 @@ namespace VoronoiDiagram
                 comboBoxMetric, numericUpDownPoints, buttonGenerate, buttonClear,
                 numericUpDownRemove, buttonRemove, radioButtonSingle, radioButtonParallel
             });
+            radioButtonSingle = new RadioButton
+            {
+                Text = "Один потік",
+                Checked = true,
+                Location = new Point(640, 11),
+                AutoSize = true
+            };
+
+            radioButtonParallel = new RadioButton
+            {
+                Text = "Паралельно",
+                Location = new Point(720, 11),
+                AutoSize = true
+            };
 
             //додавання елементів
             this.Controls.Add(pictureBox);
@@ -159,6 +187,43 @@ namespace VoronoiDiagram
             //ыныц полотна
             canvas = new Bitmap(pictureBox.Width, pictureBox.Height);
             pictureBox.Image = canvas;
+        }
+        private void PictureBox_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                vertices.Add(e.Location);
+                RenderVoronoi();
+            }
+            else if (e.Button == MouseButtons.Right && vertices.Count > 0)
+            {
+                var closest = vertices.OrderBy(v => metrics[currentMetric](v, e.Location)).First();
+                vertices.Remove(closest);
+                RenderVoronoi();
+            }
+        }
+
+        private void ButtonGenerate_Click(object sender, EventArgs e)
+        {
+            var rnd = new Random();
+            vertices.Clear();
+            for (int i = 0; i < numericUpDownPoints.Value; i++)
+            {
+                vertices.Add(new PointF(
+                    rnd.Next(pictureBox.Width),
+                    rnd.Next(pictureBox.Height)
+                ));
+            }
+            RenderVoronoi();
+        }
+
+        private void ButtonClear_Click(object sender, EventArgs e)
+        {
+            vertices.Clear();
+            using (var g = Graphics.FromImage(canvas))
+                g.Clear(Color.White);
+            pictureBox.Refresh();
+            labelStats.Text = "Статистика: ";
         }
     }
 }
