@@ -32,7 +32,7 @@ namespace VoronoiDiagram
             ["Манхетенська"] = (p1, p2) => Math.Abs(p1.X - p2.X) + Math.Abs(p1.Y - p2.Y),
             ["Чебишева"] = (p1, p2) => Math.Max(Math.Abs(p1.X - p2.X), Math.Abs(p1.Y - p2.Y))
         };
-        public MainForm()
+        public Form1()
         {
             InitializeComponent();
             InitializeCustomComponents();
@@ -52,6 +52,7 @@ namespace VoronoiDiagram
                 using (var g = Graphics.FromImage(canvas))
                     g.Clear(Color.White);
                 pictureBox.Refresh();
+                labelStats.Text = "Статистика: ";
                 return;
             }
 
@@ -62,6 +63,10 @@ namespace VoronoiDiagram
             locusSizes.Clear();
             var colors = AssignColors();
 
+            //очищення полотна
+            using (var g = Graphics.FromImage(canvas))
+                g.Clear(Color.White);
+
             if (useParallel)
             {
                 int parts = Environment.ProcessorCount;
@@ -71,6 +76,19 @@ namespace VoronoiDiagram
                 {
                     ProcessRegion(rect, colors);
                 });
+            }
+            else
+            {
+                ProcessRegion(new Rectangle(0, 0, canvas.Width, canvas.Height), colors);
+            }
+
+            //малювання вершин
+            using (var g = Graphics.FromImage(canvas))
+            {
+                foreach (var vertex in vertices)
+                {
+                    g.FillEllipse(Brushes.Black, vertex.X - 2, vertex.Y - 2, 4, 4);
+                }
             }
 
             timer.Stop();
@@ -110,11 +128,38 @@ namespace VoronoiDiagram
 
         private bool IsVertexRelevant(PointF vertex, Rectangle region, double maxDist)
         {
-            
+            //якщо вершина всередині регіону
+            if (region.Contains((int)vertex.X, (int)vertex.Y))
+                return true;
+
+            //відстань до найближчої точки регіону
+            float closestX = Math.Clamp(vertex.X, region.Left, region.Right - 1);
+            float closestY = Math.Clamp(vertex.Y, region.Top, region.Bottom - 1);
+            double dist = metrics[currentMetric](vertex, new PointF(closestX, closestY));
+
+            return dist <= maxDist;
         }
         private List<Rectangle> PartitionCanvas(int parts)
         {
-            
+            int cols = (int)Math.Sqrt(parts);
+            int rows = (parts + cols - 1) / cols;
+            var partitions = new List<Rectangle>();
+            int width = canvas.Width / cols;
+            int height = canvas.Height / rows;
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    int rectX = x * width;
+                    int rectY = y * height;
+                    int rectWidth = (x == cols - 1) ? canvas.Width - x * width : width;
+                    int rectHeight = (y == rows - 1) ? canvas.Height - y * height : height;
+
+                    partitions.Add(new Rectangle(rectX, rectY, rectWidth, rectHeight));
+                }
+            }
+            return partitions;
         }
         private PointF? FindClosestVertex(PointF point, Rectangle region, double maxDist)
         {
