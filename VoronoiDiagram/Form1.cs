@@ -21,9 +21,7 @@ namespace VoronoiDiagram
         public MainForm()
         {
             InitializeComponent();
-            canvas = new Bitmap(pictureBox.Width, pictureBox.Height);
-            pictureBox.Image = canvas;
-            comboBoxMetric.SelectedIndex = 0;
+            InitializeCustomComponents();
         }
         private void RenderVoronoi()
         {
@@ -59,6 +57,108 @@ namespace VoronoiDiagram
 
             labelStats.Text = $"Час: {timer.ElapsedMilliseconds} мс | CPU: {cpuTime:F2} мс | Пам'ять: {memUsed:F2} КБ";
             pictureBox.Refresh();
+        }
+
+        private void InitializeCustomComponents()
+        {
+            this.Text = "Діаграма Вороного";
+            this.Size = new Size(800, 600);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            // PictureBox
+            pictureBox = new PictureBox
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.White
+            };
+            pictureBox.MouseClick += PictureBox_MouseClick;
+
+            // ComboBox для вибору метрики
+            comboBoxMetric = new ComboBox
+            {
+                Items = { "Евклідова", "Манхетенська", "Чебишева" },
+                SelectedIndex = 0,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(10, 10),
+                Width = 120
+            };
+            comboBoxMetric.SelectedIndexChanged += ComboBoxMetric_SelectedIndexChanged;
+
+            // NumericUpDown для кількості точок
+            numericUpDownPoints = new NumericUpDown
+            {
+                Minimum = 1,
+                Maximum = 10000,
+                Value = 100,
+                Location = new Point(140, 10),
+                Width = 60
+            };
+
+            //gen
+            buttonGenerate = new Button
+            {
+                Text = "Згенерувати",
+                Location = new Point(210, 9),
+                Width = 100
+            };
+            buttonGenerate.Click += ButtonGenerate_Click;
+
+            //del
+            buttonClear = new Button
+            {
+                Text = "Очистити",
+                Location = new Point(320, 9),
+                Width = 80
+            };
+            buttonClear.Click += ButtonClear_Click;
+
+            // NumericUpDown для відсотка видалення
+            numericUpDownRemove = new NumericUpDown
+            {
+                Minimum = 1,
+                Maximum = 100,
+                Value = 30,
+                Location = new Point(410, 10),
+                Width = 60
+            };
+
+            //видалення малих локусів
+            buttonRemove = new Button
+            {
+                Text = "Вилучити малі локуси",
+                Location = new Point(480, 9),
+                Width = 150
+            };
+            buttonRemove.Click += ButtonRemove_Click;
+
+            //стат
+            labelStats = new Label
+            {
+                Text = "Статистика: ",
+                Dock = DockStyle.Bottom,
+                Height = 20,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            //controlPanel
+            Panel controlPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 40
+            };
+            controlPanel.Controls.AddRange(new Control[] {
+                comboBoxMetric, numericUpDownPoints, buttonGenerate, buttonClear,
+                numericUpDownRemove, buttonRemove, radioButtonSingle, radioButtonParallel
+            });
+
+            //додавання елементів
+            this.Controls.Add(pictureBox);
+            this.Controls.Add(controlPanel);
+            this.Controls.Add(labelStats);
+
+            //ыныц полотна
+            canvas = new Bitmap(pictureBox.Width, pictureBox.Height);
+            pictureBox.Image = canvas;
         }
     }
 }
