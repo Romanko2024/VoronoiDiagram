@@ -37,6 +37,14 @@ namespace VoronoiDiagram
             InitializeComponent();
             InitializeCustomComponents();
         }
+        private Dictionary<PointF, Color> AssignColors()
+        {
+            var rnd = new Random();
+            return vertices.ToDictionary(
+                v => v,
+                v => Color.FromArgb(rnd.Next(200, 256), rnd.Next(200, 256), rnd.Next(200, 256)) // Світлі кольори
+            );
+        }
         private void RenderVoronoi()
         {
             if (vertices.Count == 0)
@@ -71,6 +79,61 @@ namespace VoronoiDiagram
 
             labelStats.Text = $"Час: {timer.ElapsedMilliseconds} мс | CPU: {cpuTime:F2} мс | Пам'ять: {memUsed:F2} КБ";
             pictureBox.Refresh();
+        }
+
+        private void ProcessRegion(Rectangle rect, Dictionary<PointF, Color> colors)
+        {
+            double maxDist = Math.Sqrt(Math.Pow(rect.Width, 2) + Math.Pow(rect.Height, 2)) * 2;
+
+            for (int y = rect.Top; y < rect.Bottom; y++)
+            {
+                for (int x = rect.Left; x < rect.Right; x++)
+                {
+                    var point = new PointF(x, y);
+                    var closest = FindClosestVertex(point, rect, maxDist);
+                    if (closest.HasValue)
+                    {
+                        lock (canvas)
+                        {
+                            canvas.SetPixel(x, y, colors[closest.Value]);
+                        }
+                        lock (locusSizes)
+                        {
+                            if (!locusSizes.ContainsKey(closest.Value))
+                                locusSizes[closest.Value] = 0;
+                            locusSizes[closest.Value]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool IsVertexRelevant(PointF vertex, Rectangle region, double maxDist)
+        {
+            
+        }
+        private List<Rectangle> PartitionCanvas(int parts)
+        {
+            
+        }
+        private PointF? FindClosestVertex(PointF point, Rectangle region, double maxDist)
+        {
+            PointF? closest = null;
+            double minDist = double.MaxValue;
+
+            foreach (var vertex in vertices)
+            {
+                if (!IsVertexRelevant(vertex, region, maxDist))
+                    continue;
+
+                double dist = metrics[currentMetric](point, vertex);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    closest = vertex;
+                }
+            }
+            return closest;
         }
 
         private void InitializeCustomComponents()
@@ -225,5 +288,32 @@ namespace VoronoiDiagram
             pictureBox.Refresh();
             labelStats.Text = "Статистика: ";
         }
+        private void ComboBoxMetric_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            currentMetric = comboBoxMetric.SelectedItem.ToString();
+            if (vertices.Count > 0) RenderVoronoi();
+        }
+
+        private void RadioButtonParallel_CheckedChanged(object sender, EventArgs e)
+        {
+            useParallel = radioButtonParallel.Checked;
+            if (vertices.Count > 0) RenderVoronoi();
+        }
+
+        private void ButtonRemove_Click(object sender, EventArgs e)
+        {
+            if (locusSizes.Count == 0 || vertices.Count == 0) return;
+
+            double threshold = (double)numericUpDownRemove.Value / 100.0;
+            var avgSize = locusSizes.Values.Average();
+            var toRemove = locusSizes
+                .Where(kvp => kvp.Value < avgSize * threshold)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            vertices.RemoveAll(toRemove.Contains);
+            RenderVoronoi();
+        }
+
     }
 }
