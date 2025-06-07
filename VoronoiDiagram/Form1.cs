@@ -33,7 +33,6 @@ namespace VoronoiDiagram
             ["Чебишева"] = (p1, p2) => Math.Max(Math.Abs(p1.X - p2.X), Math.Abs(p1.Y - p2.Y))
         };
 
-        // Виправлено: конструктор має ім'я Form1 (назва класу)
         public Form1()
         {
             InitializeComponent();
@@ -45,7 +44,7 @@ namespace VoronoiDiagram
             var rnd = new Random();
             return vertices.ToDictionary(
                 v => v,
-                v => Color.FromArgb(rnd.Next(200, 256), rnd.Next(200, 256), rnd.Next(200, 256))
+                v => Color.FromArgb(rnd.Next(20, 256), rnd.Next(20, 256), rnd.Next(20, 256))
             );
         }
 
